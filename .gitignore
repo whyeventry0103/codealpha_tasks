@@ -1,0 +1,32 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# PDF files (if you don't want to track PDFs)
+*.pdf
+
+# Or specifically ignore these PDFs if you want to keep other PDFs
+Artificial Intelligence Tasks & Instructions — CodeAlpha M1.pdf
+CodeAlpha_Offer_Letter_Muhammad_Ali_Shah.pdf
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python (if you'll have Python code in subdirectories)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environment files
+.env
+.venv/
+venv/
+ENV/
+env/
