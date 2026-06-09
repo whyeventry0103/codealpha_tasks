@@ -30,3 +30,15 @@ __pycache__/
 venv/
 ENV/
 env/
+# YOLO model weights (auto-downloaded on first run)
+*.pt
+
+# Claude Code local config
+.claude/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
