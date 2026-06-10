@@ -1,15 +1,12 @@
 """
 Python FAQ Chatbot — Flask web app
-Run from the project root (after activating .venv):
-  source .venv/bin/activate
-  python 'Task 2/chatbot.py'
-Then open http://localhost:5001 in your browser
+Run: source .venv/bin/activate && python 'Task 2/chatbot.py'
+Opens at http://localhost:5001
 """
 
 import re
 
 import nltk
-
 nltk.download("punkt", quiet=True)
 nltk.download("stopwords", quiet=True)
 nltk.download("wordnet", quiet=True)
@@ -31,29 +28,38 @@ FAQ_DATA: list[tuple[str, str]] = [
     ("What is a list in Python?", "A list is an ordered, mutable collection: [1, 2, 3]. It supports indexing, slicing, append, pop, sort, and many more methods."),
     ("What is a dictionary?", "A dict is an unordered collection of key-value pairs: {'name': 'Alice', 'age': 25}. Keys must be unique and immutable."),
     ("How do I define a function?", "Use the def keyword: def greet(name): return f'Hello, {name}'. Call it with greet('Alice')."),
-    ("What is a class?", "A class is a blueprint for objects. Define it with class MyClass: and create instances with obj = MyClass(). Classes bundle data (attributes) and behavior (methods)."),
+    ("What is a class?", "A class is a blueprint for objects. Define with class MyClass: and create instances with obj = MyClass(). Classes bundle data (attributes) and behavior (methods)."),
     ("What is inheritance?", "Inheritance lets a child class reuse code from a parent: class Dog(Animal): ... Dog gets all Animal methods and can override or extend them."),
-    ("What is a lambda function?", "A lambda is a small anonymous function: square = lambda x: x**2. Good for short, one-time-use operations."),
+    ("What is a lambda function?", "A lambda is a small anonymous function: square = lambda x: x**2. Good for short, one-time-use operations passed to map(), filter(), or sorted()."),
     ("What is list comprehension?", "A concise way to build lists: [x*2 for x in range(5)] gives [0,2,4,6,8]. You can add a filter: [x for x in range(10) if x % 2 == 0]."),
     ("What is pip?", "pip is Python's package manager. Install packages with: pip install package_name. It fetches from PyPI (Python Package Index)."),
     ("What is a virtual environment?", "An isolated Python environment for project-specific dependencies. Create: python -m venv env. Activate: source env/bin/activate (Mac/Linux) or env\\Scripts\\activate (Windows)."),
-    ("List vs tuple — what's the difference?", "Lists are mutable (can be changed) and use []. Tuples are immutable and use (). Tuples are slightly faster and used for fixed data."),
-    ("How does exception handling work?", "Use try/except: try: risky() except ValueError as e: handle(e). Add else (runs if no exception) and finally (always runs)."),
+    ("List vs tuple — what is the difference?", "Lists are mutable (can be changed) and use []. Tuples are immutable and use (). Tuples are slightly faster and used for fixed data."),
+    ("How does exception handling work?", "Use try/except: try: risky() except ValueError as e: handle(e). Add else (runs if no exception) and finally (always runs, for cleanup)."),
     ("What is a module?", "A module is a .py file you can import. import math gives access to math.sqrt(), math.pi, etc. Use from math import sqrt to import specific items."),
     ("What is the difference between == and is?", "== checks value equality. is checks identity (same object in memory). [1,2] == [1,2] is True, but [1,2] is [1,2] is False."),
-    ("What are *args and **kwargs?", "*args collects extra positional arguments as a tuple. **kwargs collects extra keyword arguments as a dict. def f(*args, **kwargs): lets you accept any input."),
-    ("What is a decorator?", "A decorator wraps a function to add behavior: @my_decorator above def my_func(). Commonly used for logging, authentication, and caching."),
-    ("What is a generator?", "A function that yields values one at a time using yield. Memory-efficient for large sequences — it doesn't build the whole list at once."),
-    ("How do I read a file?", "Use: with open('file.txt', 'r') as f: content = f.read(). The with statement auto-closes the file."),
+    ("What are args and kwargs?", "*args collects extra positional arguments as a tuple. **kwargs collects extra keyword arguments as a dict. def f(*args, **kwargs): lets you accept any input."),
+    ("What is a decorator?", "A decorator wraps a function to add behavior: @my_decorator above def my_func(). Commonly used for logging, authentication, timing, and caching."),
+    ("What is a generator?", "A function that yields values one at a time using yield. Memory-efficient for large sequences — it does not build the whole list at once."),
+    ("How do I read a file?", "Use: with open('file.txt', 'r') as f: content = f.read(). The with statement auto-closes the file even if an exception occurs."),
     ("How do I write to a file?", "with open('file.txt', 'w') as f: f.write('Hello'). Use 'a' mode to append, 'w' to overwrite."),
     ("What is JSON in Python?", "JSON is a text data format. json.dumps(obj) converts Python to JSON string. json.loads(string) parses JSON back to Python objects."),
     ("What is an API?", "An API is an interface that lets programs communicate. Web APIs accept HTTP requests and return data (usually JSON). Use the requests library to call them."),
     ("What is machine learning?", "ML is a branch of AI where algorithms learn patterns from data to make predictions. Common Python libraries: scikit-learn, TensorFlow, PyTorch."),
-    ("Supervised vs unsupervised learning?", "Supervised: learns from labeled input-output pairs to predict outputs. Unsupervised: finds patterns in unlabeled data, e.g., clustering similar items."),
+    ("What is supervised vs unsupervised learning?", "Supervised: learns from labeled input-output pairs to predict outputs. Unsupervised: finds patterns in unlabeled data, e.g., clustering similar items."),
     ("What is overfitting?", "Overfitting happens when a model memorizes training data including noise and performs poorly on new data. Fix with regularization, dropout, or more training data."),
     ("What is a neural network?", "A neural network is a model of stacked layers of neurons. Each layer learns progressively more abstract features. Deep learning uses many hidden layers."),
-    ("AI vs ML vs Deep Learning?", "AI is the broad goal of intelligent machines. ML is a subset using data-driven learning. Deep Learning is a subset of ML using multi-layer neural networks."),
+    ("What is the difference between AI ML and Deep Learning?", "AI is the broad goal of intelligent machines. ML is a subset using data-driven learning. Deep Learning is a subset of ML using multi-layer neural networks."),
     ("How do I exit Python?", "Type exit() or quit() in the REPL, or press Ctrl+D on Mac/Linux or Ctrl+Z+Enter on Windows."),
+]
+
+SUGGESTED_QUESTIONS: list[str] = [
+    "What is Python?",
+    "What is machine learning?",
+    "What is a neural network?",
+    "How do I define a function?",
+    "What is list comprehension?",
+    "What is a virtual environment?",
 ]
 
 _lemmatizer = WordNetLemmatizer()
@@ -78,30 +84,33 @@ GREETINGS: set[str] = {"hi", "hello", "hey", "howdy", "greetings", "sup", "yo"}
 FAREWELLS: set[str] = {"bye", "goodbye", "exit", "quit", "see you", "later", "farewell"}
 
 
-def get_answer(user_input: str, threshold: float = 0.15) -> str:
+def get_answer(user_input: str) -> tuple[str, float, str]:
+    """Returns (answer, confidence_0_to_1, matched_question)."""
     lower = user_input.lower().strip()
     if any(g in lower for g in GREETINGS):
-        return "Hello! I'm your Python FAQ Chatbot. Ask me anything about Python or machine learning!"
+        return "Hello! I'm your Python FAQ Chatbot. Ask me anything about Python or machine learning!", 1.0, ""
     if any(f in lower for f in FAREWELLS):
-        return "Goodbye! Happy coding!"
+        return "Goodbye! Happy coding!", 1.0, ""
     if "thank" in lower:
-        return "You're welcome! Feel free to ask more questions."
+        return "You're welcome! Feel free to ask more questions.", 1.0, ""
 
     processed = preprocess(user_input)
     if not processed.strip():
-        return "I didn't understand that. Could you rephrase?"
+        return "I didn't understand that. Could you rephrase?", 0.0, ""
 
     user_vec = _vectorizer.transform([processed])
     sims = cosine_similarity(user_vec, _tfidf_matrix).flatten()
     best_idx: int = int(np.argmax(sims))
     best_score: float = float(sims[best_idx])
 
-    if best_score < threshold:
+    if best_score < 0.12:
         return (
-            "I'm not sure I have an answer for that. "
-            "Try asking about Python basics, data types, functions, classes, file I/O, or machine learning."
+            "I'm not sure I have an answer for that. Try asking about Python basics, "
+            "data types, functions, classes, file I/O, or machine learning.",
+            best_score,
+            "",
         )
-    return _answers[best_idx]
+    return _answers[best_idx], best_score, _questions[best_idx]
 
 
 app = Flask(__name__)
@@ -116,95 +125,72 @@ HTML = """<!DOCTYPE html>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'Segoe UI', system-ui, sans-serif;
-    background: #1e1e2e;
-    color: #cdd6f4;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 28px 16px;
+    background: #1e1e2e; color: #cdd6f4;
+    height: 100vh; display: flex; flex-direction: column;
+    align-items: center; padding: 24px 16px;
   }
-  h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 20px; }
+  h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 0.85rem; color: #6c7086; margin-bottom: 16px; }
   .chat-container {
-    background: #181825;
-    border-radius: 16px;
-    width: 100%;
-    max-width: 700px;
-    display: flex;
-    flex-direction: column;
-    height: 70vh;
-    box-shadow: 0 8px 32px #00000060;
-    overflow: hidden;
+    background: #181825; border-radius: 16px;
+    width: 100%; max-width: 720px;
+    display: flex; flex-direction: column;
+    height: 72vh; box-shadow: 0 8px 32px #00000060; overflow: hidden;
   }
-  #chat-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .msg { display: flex; flex-direction: column; max-width: 80%; }
+  #chat-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { display: flex; flex-direction: column; max-width: 82%; }
   .msg.user { align-self: flex-end; align-items: flex-end; }
   .msg.bot  { align-self: flex-start; align-items: flex-start; }
-  .msg-label { font-size: 0.75rem; font-weight: 600; margin-bottom: 4px; color: #6c7086; }
+  .msg-label { font-size: 0.72rem; font-weight: 600; margin-bottom: 3px; color: #6c7086; }
   .msg.user .msg-label { color: #89b4fa; }
   .msg.bot  .msg-label { color: #a6e3a1; }
-  .bubble {
-    padding: 10px 15px;
-    border-radius: 12px;
-    font-size: 0.95rem;
-    line-height: 1.5;
-    max-width: 100%;
-    word-break: break-word;
-  }
+  .bubble { padding: 10px 15px; border-radius: 12px; font-size: 0.95rem; line-height: 1.55; max-width: 100%; word-break: break-word; }
   .msg.user .bubble { background: #313244; color: #cdd6f4; border-bottom-right-radius: 3px; }
   .msg.bot  .bubble { background: #1e3a2e; color: #a6e3a1; border-bottom-left-radius: 3px; }
-  .input-row {
-    display: flex;
-    gap: 10px;
-    padding: 14px 16px;
-    background: #11111b;
+  .confidence {
+    font-size: 0.7rem; margin-top: 4px; padding: 2px 8px;
+    border-radius: 999px; display: inline-block;
+  }
+  .conf-high   { background: #1e3a2e; color: #a6e3a1; }
+  .conf-medium { background: #3a3a1e; color: #f9e2af; }
+  .conf-low    { background: #3a1e1e; color: #f38ba8; }
+  .suggestions {
+    padding: 10px 16px 12px;
     border-top: 1px solid #313244;
+    display: flex; gap: 8px; flex-wrap: wrap;
+    background: #11111b;
   }
-  input[type=text] {
-    flex: 1;
-    background: #313244;
-    border: none;
-    border-radius: 8px;
-    padding: 11px 14px;
-    color: #cdd6f4;
-    font-size: 1rem;
-    outline: none;
-    font-family: inherit;
+  .chip {
+    background: #313244; color: #89b4fa;
+    border: none; border-radius: 999px;
+    padding: 5px 12px; font-size: 0.78rem;
+    cursor: pointer; transition: background .15s;
+    white-space: nowrap;
   }
+  .chip:hover { background: #45475a; }
+  .input-row { display: flex; gap: 10px; padding: 12px 16px; background: #11111b; border-top: 1px solid #313244; }
+  input[type=text] { flex: 1; background: #313244; border: none; border-radius: 8px; padding: 11px 14px; color: #cdd6f4; font-size: 1rem; outline: none; font-family: inherit; }
   input[type=text]:focus { box-shadow: 0 0 0 2px #89b4fa; }
-  button {
-    background: #89b4fa;
-    color: #1e1e2e;
-    border: none;
-    border-radius: 8px;
-    padding: 11px 22px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity .15s;
-  }
-  button:hover { opacity: 0.85; }
-  .typing { color: #6c7086; font-style: italic; font-size: 0.88rem; padding: 4px 0; }
-  #chat-area::-webkit-scrollbar { width: 6px; }
-  #chat-area::-webkit-scrollbar-track { background: transparent; }
+  button.send { background: #89b4fa; color: #1e1e2e; border: none; border-radius: 8px; padding: 11px 22px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+  button.send:hover { opacity: 0.85; }
+  .typing { color: #6c7086; font-style: italic; font-size: 0.85rem; padding: 4px 0; }
+  #chat-area::-webkit-scrollbar { width: 5px; }
   #chat-area::-webkit-scrollbar-thumb { background: #45475a; border-radius: 3px; }
 </style>
 </head>
 <body>
 <h1>Python FAQ Chatbot</h1>
+<p class="subtitle">TF-IDF cosine similarity · NLP with NLTK · 30 Python & ML topics</p>
 <div class="chat-container">
   <div id="chat-area"></div>
+  <div class="suggestions" id="suggestions">
+    {% for q in suggested %}
+    <button class="chip" onclick="fillInput(this.textContent)">{{ q }}</button>
+    {% endfor %}
+  </div>
   <div class="input-row">
-    <input type="text" id="user-input" placeholder="Ask a Python question..." autocomplete="off">
-    <button onclick="sendMessage()">Send</button>
+    <input type="text" id="user-input" placeholder="Ask a Python question…" autocomplete="off">
+    <button class="send" onclick="sendMessage()">Send</button>
   </div>
 </div>
 
@@ -212,7 +198,7 @@ HTML = """<!DOCTYPE html>
 const chatArea = document.getElementById('chat-area');
 const inputEl  = document.getElementById('user-input');
 
-function addMessage(text, role) {
+function addMessage(text, role, confidence) {
   const wrap = document.createElement('div');
   wrap.className = 'msg ' + role;
   const label = document.createElement('div');
@@ -223,23 +209,28 @@ function addMessage(text, role) {
   bubble.textContent = text;
   wrap.appendChild(label);
   wrap.appendChild(bubble);
+  if (role === 'bot' && confidence !== undefined && confidence < 1.0) {
+    const pct = Math.round(confidence * 100);
+    const badge = document.createElement('div');
+    badge.className = 'confidence ' + (pct >= 60 ? 'conf-high' : pct >= 35 ? 'conf-medium' : 'conf-low');
+    badge.textContent = `Confidence: ${pct}%`;
+    wrap.appendChild(badge);
+  }
   chatArea.appendChild(wrap);
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
 function showTyping() {
   const el = document.createElement('div');
-  el.className = 'typing';
-  el.id = 'typing';
-  el.textContent = 'Bot is typing...';
+  el.className = 'typing'; el.id = 'typing';
+  el.textContent = 'Bot is typing…';
   chatArea.appendChild(el);
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-function hideTyping() {
-  const el = document.getElementById('typing');
-  if (el) el.remove();
-}
+function hideTyping() { const el = document.getElementById('typing'); if (el) el.remove(); }
+
+function fillInput(text) { inputEl.value = text; inputEl.focus(); }
 
 async function sendMessage() {
   const text = inputEl.value.trim();
@@ -249,23 +240,17 @@ async function sendMessage() {
   showTyping();
   try {
     const res = await fetch('/ask', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({question: text})
     });
     const data = await res.json();
     hideTyping();
-    addMessage(data.answer, 'bot');
-  } catch (e) {
-    hideTyping();
-    addMessage('Sorry, something went wrong.', 'bot');
-  }
+    addMessage(data.answer, 'bot', data.confidence);
+  } catch(e) { hideTyping(); addMessage('Sorry, something went wrong.', 'bot'); }
 }
 
 inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
-
-// Initial bot greeting
-addMessage('Hello! I\\'m your Python FAQ Chatbot. Ask me anything about Python or machine learning!', 'bot');
+addMessage('Hello! I\\'m your Python FAQ Chatbot. Ask me anything, or click a suggestion below!', 'bot');
 </script>
 </body>
 </html>"""
@@ -273,7 +258,7 @@ addMessage('Hello! I\\'m your Python FAQ Chatbot. Ask me anything about Python o
 
 @app.route("/")
 def index() -> str:
-    return render_template_string(HTML)
+    return render_template_string(HTML, suggested=SUGGESTED_QUESTIONS)
 
 
 @app.route("/ask", methods=["POST"])
@@ -281,15 +266,14 @@ def ask() -> tuple:
     data: dict = request.get_json(force=True)
     question: str = data.get("question", "").strip()
     if not question:
-        return jsonify({"answer": "Please ask a question."}), 400
-    answer: str = get_answer(question)
-    return jsonify({"answer": answer})
+        return jsonify({"answer": "Please ask a question.", "confidence": 0.0}), 400
+    answer, confidence, matched = get_answer(question)
+    return jsonify({"answer": answer, "confidence": round(confidence, 3), "matched": matched})
 
 
 if __name__ == "__main__":
     import threading
     import webbrowser
-
     port = 5001
     threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{port}")).start()
     print(f"Chatbot running at http://localhost:{port}  (Ctrl+C to stop)")

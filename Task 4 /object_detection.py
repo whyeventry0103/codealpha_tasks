@@ -12,6 +12,8 @@ import sys
 
 import cv2
 import numpy as np
+import datetime
+from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Minimal SORT tracker (no external sort package needed)
@@ -196,7 +198,9 @@ def run(source=0, conf_threshold=0.4, model_name="yolov8n.pt"):
         print(f"Error: Cannot open source '{source}'")
         sys.exit(1)
 
-    print("Running detection. Press Q to quit.")
+    recording = False
+    video_writer = None
+    print("Running detection. Press Q to quit | S=screenshot R=record Q=quit")
     fps_display = 0
     import time
     prev_time = time.time()
@@ -259,9 +263,33 @@ def run(source=0, conf_threshold=0.4, model_name="yolov8n.pt"):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 255), 2)
 
         cv2.imshow("Object Detection & Tracking (YOLOv8 + SORT) — Press Q to quit", frame)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord("q"):
             break
+        elif key == ord("s"):
+            ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            p = str(out_dir / f"screenshot_{ts}.png")
+            cv2.imwrite(p, frame)
+            print(f"Screenshot saved: {p}")
+        elif key == ord("r"):
+            if not recording:
+                ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                p = str(out_dir / f"recording_{ts}.mp4")
+                h, w = frame.shape[:2]
+                video_writer = cv2.VideoWriter(p, cv2.VideoWriter_fourcc(*"mp4v"), 20, (w, h))
+                recording = True
+                print(f"Recording started: {p}")
+            else:
+                recording = False
+                if video_writer:
+                    video_writer.release()
+                    video_writer = None
+                print("Recording stopped.")
+        if recording and video_writer:
+            video_writer.write(frame)
 
+    if video_writer:
+        video_writer.release()
     cap.release()
     cv2.destroyAllWindows()
 
